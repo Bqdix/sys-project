@@ -1,9 +1,6 @@
 package net.bqdix.sys.objects;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
 public class Message {
@@ -15,15 +12,9 @@ public class Message {
     private String text;
     private String tag;
 
-    private User autor;
-
-    public User getAutor() {
-        return autor;
-    }
-
-    public void setAutor(User autor) {
-        this.autor = autor;
-    }
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id")
+    private User author;
 
     public Message() {
     }
@@ -32,9 +23,14 @@ public class Message {
         this.id = id;
     }
 
-    public Message(String tag, String text) {
+    public Message(String tag, String text, User user) {
         this.tag = tag;
         this.text = text;
+        this.author = user;
+    }
+
+    public String getAuthorName() {
+    return author !=null ? author.getUsername() : "<none>";
     }
 
     public String getText() {
@@ -59,6 +55,14 @@ public class Message {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public User getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(User autor) {
+        this.author = autor;
     }
 }
 

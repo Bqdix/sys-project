@@ -1,5 +1,6 @@
 package net.bqdix.sys.config;
 
+import net.bqdix.sys.service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -8,13 +9,16 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
-import javax.sql.DataSource;
 
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
+
+    private final UserService userService;
+
+    public WebSecurityConfig(UserService userService) {
+        this.userService = userService;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -33,18 +37,16 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(DataSource dataSource) {
-        JdbcUserDetailsManager userDetailsManager = new JdbcUserDetailsManager(dataSource);
-        userDetailsManager.setUsersByUsernameQuery(
-                "select username, password, active from usr where username=?");
-        userDetailsManager.setAuthoritiesByUsernameQuery(
-                "select u.username, ur.roles from usr u inner join user_role ur on u.id = ur.user_id where u.username=?");
-        return userDetailsManager;
+    public PasswordEncoder passwordEncoder() {
+        // Для тестов можно оставить NoOp, но рекомендуется BCryptPasswordEncoder
+        return NoOpPasswordEncoder.getInstance();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        // Лучше заменить на BCryptPasswordEncoder, но для совместимости оставляем NoOp
-        return NoOpPasswordEncoder.getInstance();
+    public org.springframework.security.authentication.dao.DaoAuthenticationProvider authenticationProvider() {
+        var provider = new org.springframework.security.authentication.dao.DaoAuthenticationProvider();
+        provider.setUserDetailsService(userService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
     }
 }
